@@ -1,4 +1,5 @@
 <?php
+
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK ]
 // +----------------------------------------------------------------------
@@ -8,7 +9,6 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
-
 namespace think\model\relation;
 
 use Closure;
@@ -21,7 +21,6 @@ use think\Model;
 use think\model\Pivot;
 use think\model\Relation;
 use think\Paginator;
-
 /**
  * 多对多关联类
  */
@@ -32,25 +31,21 @@ class BelongsToMany extends Relation
      * @var string
      */
     protected $middle;
-
     /**
      * 中间表模型名称
      * @var string
      */
     protected $pivotName;
-
     /**
      * 中间表模型对象
      * @var Pivot
      */
     protected $pivot;
-
     /**
      * 中间表数据名称
      * @var string
      */
     protected $pivotDataName = 'pivot';
-
     /**
      * 架构函数
      * @access public
@@ -60,48 +55,43 @@ class BelongsToMany extends Relation
      * @param  string $foreignKey 关联模型外键
      * @param  string $localKey   当前模型关联键
      */
-    public function __construct(Model $parent, string $model, string $middle, string $foreignKey, string $localKey)
+    public function __construct(Model $parent, $model, $middle, $foreignKey, $localKey)
     {
-        $this->parent     = $parent;
-        $this->model      = $model;
+        $this->parent = $parent;
+        $this->model = $model;
         $this->foreignKey = $foreignKey;
-        $this->localKey   = $localKey;
-
+        $this->localKey = $localKey;
         if (false !== strpos($middle, '\\')) {
             $this->pivotName = $middle;
-            $this->middle    = class_basename($middle);
+            $this->middle = class_basename($middle);
         } else {
             $this->middle = $middle;
         }
-
-        $this->query = (new $model)->db();
+        $this->query = (new $model())->db();
         $this->pivot = $this->newPivot();
     }
-
     /**
      * 设置中间表模型
      * @access public
      * @param  $pivot
      * @return $this
      */
-    public function pivot(string $pivot)
+    public function pivot($pivot)
     {
         $this->pivotName = $pivot;
         return $this;
     }
-
     /**
      * 设置中间表数据名称
      * @access public
      * @param  string $name
      * @return $this
      */
-    public function name(string $name)
+    public function name($name)
     {
         $this->pivotDataName = $name;
         return $this;
     }
-
     /**
      * 实例化中间表模型
      * @access public
@@ -109,18 +99,16 @@ class BelongsToMany extends Relation
      * @return Pivot
      * @throws Exception
      */
-    protected function newPivot(array $data = []): Pivot
+    protected function newPivot(array $data = [])
     {
         $class = $this->pivotName ?: Pivot::class;
         $pivot = new $class($data, $this->parent, $this->middle);
-
         if ($pivot instanceof Pivot) {
             return $pivot;
         } else {
-            throw new Exception('pivot model must extends: \think\model\Pivot');
+            throw new Exception('pivot model must extends: \\think\\model\\Pivot');
         }
     }
-
     /**
      * 合成中间表模型
      * @access protected
@@ -130,40 +118,32 @@ class BelongsToMany extends Relation
     {
         foreach ($models as $model) {
             $pivot = [];
-
             foreach ($model->getData() as $key => $val) {
                 if (strpos($key, '__')) {
                     list($name, $attr) = explode('__', $key, 2);
-
                     if ('pivot' == $name) {
                         $pivot[$attr] = $val;
-                        unset($model->$key);
+                        unset($model->{$key});
                     }
                 }
             }
-
             $model->setRelation($this->pivotDataName, $this->newPivot($pivot));
         }
     }
-
     /**
      * 创建关联查询Query对象
      * @access protected
      * @return Query
      */
-    protected function buildQuery(): Query
+    protected function buildQuery()
     {
         $foreignKey = $this->foreignKey;
-        $localKey   = $this->localKey;
-
+        $localKey = $this->localKey;
         // 关联查询
         $pk = $this->parent->getPk();
-
-        $condition = ['pivot.' . $localKey, '=', $this->parent->$pk];
-
+        $condition = ['pivot.' . $localKey, '=', $this->parent->{$pk}];
         return $this->belongsToManyQuery($foreignKey, $localKey, [$condition]);
     }
-
     /**
      * 延迟获取关联数据
      * @access public
@@ -171,36 +151,27 @@ class BelongsToMany extends Relation
      * @param  Closure  $closure     闭包查询条件
      * @return Collection
      */
-    public function getRelation(array $subRelation = [], Closure $closure = null): Collection
+    public function getRelation(array $subRelation = [], Closure $closure = null)
     {
         if ($closure) {
             $closure($this);
         }
-
-        $result = $this->buildQuery()
-            ->relation($subRelation)
-            ->select()
-            ->setParent(clone $this->parent);
-
+        $result = $this->buildQuery()->relation($subRelation)->select()->setParent(clone $this->parent);
         $this->hydratePivot($result);
-
         return $result;
     }
-
     /**
      * 重载select方法
      * @access public
      * @param  mixed $data
      * @return Collection
      */
-    public function select($data = null): Collection
+    public function select($data = null)
     {
         $result = $this->buildQuery()->select($data);
         $this->hydratePivot($result);
-
         return $result;
     }
-
     /**
      * 重载paginate方法
      * @access public
@@ -209,14 +180,12 @@ class BelongsToMany extends Relation
      * @param  array     $config
      * @return Paginator
      */
-    public function paginate($listRows = null, $simple = false, $config = []): Paginator
+    public function paginate($listRows = null, $simple = false, $config = [])
     {
         $result = $this->buildQuery()->paginate($listRows, $simple, $config);
         $this->hydratePivot($result);
-
         return $result;
     }
-
     /**
      * 重载find方法
      * @access public
@@ -226,36 +195,31 @@ class BelongsToMany extends Relation
     public function find($data = null)
     {
         $result = $this->buildQuery()->find($data);
-
         if (!$result->isEmpty()) {
             $this->hydratePivot([$result]);
         }
-
         return $result;
     }
-
     /**
      * 查找多条记录 如果不存在则抛出异常
      * @access public
      * @param  array|string|Query|\Closure $data
      * @return Collection
      */
-    public function selectOrFail($data = null): Collection
+    public function selectOrFail($data = null)
     {
         return $this->buildQuery()->failException(true)->select($data);
     }
-
     /**
      * 查找单条记录 如果不存在则抛出异常
      * @access public
      * @param  array|string|Query|\Closure $data
      * @return Model
      */
-    public function findOrFail($data = null): Model
+    public function findOrFail($data = null)
     {
         return $this->buildQuery()->failException(true)->find($data);
     }
-
     /**
      * 根据关联条件查询当前模型
      * @access public
@@ -265,11 +229,10 @@ class BelongsToMany extends Relation
      * @param  string  $joinType JOIN类型
      * @return Model
      */
-    public function has(string $operator = '>=', $count = 1, $id = '*', string $joinType = 'INNER')
+    public function has($operator = '>=', $count = 1, $id = '*', $joinType = 'INNER')
     {
         return $this->parent;
     }
-
     /**
      * 根据关联条件查询当前模型
      * @access public
@@ -279,11 +242,10 @@ class BelongsToMany extends Relation
      * @return Query
      * @throws Exception
      */
-    public function hasWhere($where = [], $fields = null, string $joinType = '')
+    public function hasWhere($where = [], $fields = null, $joinType = '')
     {
         throw new Exception('relation not support: hasWhere');
     }
-
     /**
      * 设置中间表的查询条件
      * @access public
@@ -297,7 +259,6 @@ class BelongsToMany extends Relation
         $this->query->where('pivot.' . $field, $op, $condition);
         return $this;
     }
-
     /**
      * 预载入关联查询（数据集）
      * @access public
@@ -308,39 +269,31 @@ class BelongsToMany extends Relation
      * @param  array   $cache       关联缓存
      * @return void
      */
-    public function eagerlyResultSet(array &$resultSet, string $relation, array $subRelation, Closure $closure = null, array $cache = []): void
+    public function eagerlyResultSet(array &$resultSet, $relation, array $subRelation, Closure $closure = null)
     {
         $localKey = $this->localKey;
-        $pk       = $resultSet[0]->getPk();
-        $range    = [];
-
+        $pk = $resultSet[0]->getPk();
+        $range = [];
         foreach ($resultSet as $result) {
             // 获取关联外键列表
-            if (isset($result->$pk)) {
-                $range[] = $result->$pk;
+            if (isset($result->{$pk})) {
+                $range[] = $result->{$pk};
             }
         }
-
         if (!empty($range)) {
             // 查询关联数据
-            $data = $this->eagerlyManyToMany([
-                ['pivot.' . $localKey, 'in', $range],
-            ], $relation, $subRelation, $closure, $cache);
-
+            $data = $this->eagerlyManyToMany([['pivot.' . $localKey, 'in', $range]], $relation, $subRelation, $closure, $cache);
             // 关联属性名
             $attr = Str::snake($relation);
-
             // 关联数据封装
             foreach ($resultSet as $result) {
-                if (!isset($data[$result->$pk])) {
-                    $data[$result->$pk] = [];
+                if (!isset($data[$result->{$pk}])) {
+                    $data[$result->{$pk}] = [];
                 }
-
-                $result->setRelation($attr, $this->resultSetBuild($data[$result->$pk], clone $this->parent));
+                $result->setRelation($attr, $this->resultSetBuild($data[$result->{$pk}], clone $this->parent));
             }
         }
     }
-
     /**
      * 预载入关联查询（单个数据）
      * @access public
@@ -351,26 +304,20 @@ class BelongsToMany extends Relation
      * @param  array   $cache       关联缓存
      * @return void
      */
-    public function eagerlyResult(Model $result, string $relation, array $subRelation, Closure $closure = null, array $cache = []): void
+    public function eagerlyResult(Model $result, $relation, array $subRelation, Closure $closure = null, array $cache = [])
     {
         $pk = $result->getPk();
-
-        if (isset($result->$pk)) {
-            $pk = $result->$pk;
+        if (isset($result->{$pk})) {
+            $pk = $result->{$pk};
             // 查询管理数据
-            $data = $this->eagerlyManyToMany([
-                ['pivot.' . $this->localKey, '=', $pk],
-            ], $relation, $subRelation, $closure, $cache);
-
+            $data = $this->eagerlyManyToMany([['pivot.' . $this->localKey, '=', $pk]], $relation, $subRelation, $closure, $cache);
             // 关联数据封装
             if (!isset($data[$pk])) {
                 $data[$pk] = [];
             }
-
             $result->setRelation(Str::snake($relation), $this->resultSetBuild($data[$pk], clone $this->parent));
         }
     }
-
     /**
      * 关联统计
      * @access public
@@ -381,25 +328,18 @@ class BelongsToMany extends Relation
      * @param  string  $name 统计字段别名
      * @return integer
      */
-    public function relationCount(Model $result, Closure $closure = null, string $aggregate = 'count', string $field = '*', string &$name = null): float
+    public function relationCount(Model $result, Closure $closure = null, $aggregate = 'count', $field = '*', &$name = null)
     {
         $pk = $result->getPk();
-
-        if (!isset($result->$pk)) {
+        if (!isset($result->{$pk})) {
             return 0;
         }
-
-        $pk = $result->$pk;
-
+        $pk = $result->{$pk};
         if ($closure) {
             $closure($this, $name);
         }
-
-        return $this->belongsToManyQuery($this->foreignKey, $this->localKey, [
-            ['pivot.' . $this->localKey, '=', $pk],
-        ])->$aggregate($field);
+        return $this->belongsToManyQuery($this->foreignKey, $this->localKey, [['pivot.' . $this->localKey, '=', $pk]])->{$aggregate}($field);
     }
-
     /**
      * 获取关联统计子查询
      * @access public
@@ -409,19 +349,13 @@ class BelongsToMany extends Relation
      * @param  string  $name 统计字段别名
      * @return string
      */
-    public function getRelationCountQuery(Closure $closure = null, string $aggregate = 'count', string $field = '*', string &$name = null): string
+    public function getRelationCountQuery(Closure $closure = null, $aggregate = 'count', $field = '*', &$name = null)
     {
         if ($closure) {
             $closure($this, $name);
         }
-
-        return $this->belongsToManyQuery($this->foreignKey, $this->localKey, [
-            [
-                'pivot.' . $this->localKey, 'exp', new Raw('=' . $this->parent->db(false)->getTable() . '.' . $this->parent->getPk()),
-            ],
-        ])->fetchSql()->$aggregate($field);
+        return $this->belongsToManyQuery($this->foreignKey, $this->localKey, [['pivot.' . $this->localKey, 'exp', new Raw('=' . $this->parent->db(false)->getTable() . '.' . $this->parent->getPk())]])->fetchSql()->{$aggregate}($field);
     }
-
     /**
      * 多对多 关联模型预查询
      * @access protected
@@ -432,18 +366,13 @@ class BelongsToMany extends Relation
      * @param  array   $cache       关联缓存
      * @return array
      */
-    protected function eagerlyManyToMany(array $where, string $relation, array $subRelation = [], Closure $closure = null, array $cache = []): array
+    protected function eagerlyManyToMany(array $where, $relation, array $subRelation = [], Closure $closure = null, array $cache = [])
     {
         if ($closure) {
             $closure($this);
         }
-
         // 预载入关联查询 支持嵌套预载入
-        $list = $this->belongsToManyQuery($this->foreignKey, $this->localKey, $where)
-            ->with($subRelation)
-            ->cache($cache[0] ?? false, $cache[1] ?? null, $cache[2] ?? null)
-            ->select();
-
+        $list = $this->belongsToManyQuery($this->foreignKey, $this->localKey, $where)->with($subRelation)->cache(isset($cache[0]) ? $cache[0] : false, isset($cache[1]) ? $cache[1] : null, isset($cache[2]) ? $cache[2] : null)->select();
         // 组装模型数据
         $data = [];
         foreach ($list as $set) {
@@ -453,25 +382,19 @@ class BelongsToMany extends Relation
                     list($name, $attr) = explode('__', $key, 2);
                     if ('pivot' == $name) {
                         $pivot[$attr] = $val;
-                        unset($set->$key);
+                        unset($set->{$key});
                     }
                 }
             }
-
             $key = $pivot[$this->localKey];
-
             if ($this->withLimit && isset($data[$key]) && count($data[$key]) >= $this->withLimit) {
                 continue;
             }
-
             $set->setRelation($this->pivotDataName, $this->newPivot($pivot));
-
             $data[$key][] = $set;
         }
-
         return $data;
     }
-
     /**
      * BELONGS TO MANY 关联查询
      * @access protected
@@ -480,30 +403,22 @@ class BelongsToMany extends Relation
      * @param  array  $condition  关联查询条件
      * @return Query
      */
-    protected function belongsToManyQuery(string $foreignKey, string $localKey, array $condition = []): Query
+    protected function belongsToManyQuery($foreignKey, $localKey, array $condition = [])
     {
         // 关联查询封装
         $tableName = $this->query->getTable();
-        $table     = $this->pivot->db()->getTable();
-        $fields    = $this->getQueryFields($tableName);
-
+        $table = $this->pivot->db()->getTable();
+        $fields = $this->getQueryFields($tableName);
         if ($this->withLimit) {
             $this->query->limit($this->withLimit);
         }
-
-        $query = $this->query
-            ->field($fields)
-            ->tableField(true, $table, 'pivot', 'pivot__');
-
+        $query = $this->query->field($fields)->tableField(true, $table, 'pivot', 'pivot__');
         if (empty($this->baseQuery)) {
             $relationFk = $this->query->getPk();
-            $query->join([$table => 'pivot'], 'pivot.' . $foreignKey . '=' . $tableName . '.' . $relationFk)
-                ->where($condition);
+            $query->join([$table => 'pivot'], 'pivot.' . $foreignKey . '=' . $tableName . '.' . $relationFk)->where($condition);
         }
-
         return $query;
     }
-
     /**
      * 保存（新增）当前关联数据对象
      * @access public
@@ -516,7 +431,6 @@ class BelongsToMany extends Relation
         // 保存关联表/中间表数据
         return $this->attach($data, $pivot);
     }
-
     /**
      * 批量保存当前关联数据对象
      * @access public
@@ -525,23 +439,19 @@ class BelongsToMany extends Relation
      * @param  bool     $samePivot 额外数据是否相同
      * @return array|false
      */
-    public function saveAll(iterable $dataSet, array $pivot = [], bool $samePivot = false)
+    public function saveAll(iterable $dataSet, array $pivot = [], $samePivot = false)
     {
         $result = [];
-
         foreach ($dataSet as $key => $data) {
             if (!$samePivot) {
-                $pivotData = $pivot[$key] ?? [];
+                $pivotData = isset($pivot[$key]) ? $pivot[$key] : [];
             } else {
                 $pivotData = $pivot;
             }
-
             $result[] = $this->attach($data, $pivotData);
         }
-
         return empty($result) ? false : $result;
     }
-
     /**
      * 附加关联的一个中间表数据
      * @access public
@@ -557,8 +467,8 @@ class BelongsToMany extends Relation
                 $id = $data;
             } else {
                 // 保存关联表数据
-                $model = new $this->model;
-                $id    = $model->insertGetId($data);
+                $model = new $this->model();
+                $id = $model->insertGetId($data);
             }
         } elseif (is_numeric($data) || is_string($data)) {
             // 根据关联表主键直接写入中间表
@@ -566,35 +476,27 @@ class BelongsToMany extends Relation
         } elseif ($data instanceof Model) {
             // 根据关联表主键直接写入中间表
             $relationFk = $data->getPk();
-            $id         = $data->$relationFk;
+            $id = $data->{$relationFk};
         }
-
         if (!empty($id)) {
             // 保存中间表数据
-            $pk                     = $this->parent->getPk();
-            $pivot[$this->localKey] = $this->parent->$pk;
-            $ids                    = (array) $id;
-
+            $pk = $this->parent->getPk();
+            $pivot[$this->localKey] = $this->parent->{$pk};
+            $ids = (array) $id;
             foreach ($ids as $id) {
                 $pivot[$this->foreignKey] = $id;
-                $this->pivot->replace()
-                    ->exists(false)
-                    ->data([])
-                    ->save($pivot);
+                $this->pivot->replace()->exists(false)->data([])->save($pivot);
                 $result[] = $this->newPivot($pivot);
             }
-
             if (count($result) == 1) {
                 // 返回中间表模型对象
                 $result = $result[0];
             }
-
             return $result;
         } else {
             throw new Exception('miss relation data');
         }
     }
-
     /**
      * 判断是否存在关联数据
      * @access public
@@ -608,15 +510,9 @@ class BelongsToMany extends Relation
         } else {
             $id = $data;
         }
-
-        $pivot = $this->pivot
-            ->where($this->localKey, $this->parent->getKey())
-            ->where($this->foreignKey, $id)
-            ->find();
-
+        $pivot = $this->pivot->where($this->localKey, $this->parent->getKey())->where($this->foreignKey, $id)->find();
         return $pivot ?: false;
     }
-
     /**
      * 解除关联的一个中间表数据
      * @access public
@@ -624,7 +520,7 @@ class BelongsToMany extends Relation
      * @param  bool          $relationDel 是否同时删除关联表数据
      * @return integer
      */
-    public function detach($data = null, bool $relationDel = false): int
+    public function detach($data = null, $relationDel = false)
     {
         if (is_array($data)) {
             $id = $data;
@@ -634,29 +530,23 @@ class BelongsToMany extends Relation
         } elseif ($data instanceof Model) {
             // 根据关联表主键直接写入中间表
             $relationFk = $data->getPk();
-            $id         = $data->$relationFk;
+            $id = $data->{$relationFk};
         }
-
         // 删除中间表数据
-        $pk      = $this->parent->getPk();
-        $pivot   = [];
-        $pivot[] = [$this->localKey, '=', $this->parent->$pk];
-
+        $pk = $this->parent->getPk();
+        $pivot = [];
+        $pivot[] = [$this->localKey, '=', $this->parent->{$pk}];
         if (isset($id)) {
             $pivot[] = [$this->foreignKey, is_array($id) ? 'in' : '=', $id];
         }
-
         $result = $this->pivot->where($pivot)->delete();
-
         // 删除关联表数据
         if (isset($id) && $relationDel) {
             $model = $this->model;
             $model::destroy($id);
         }
-
         return $result;
     }
-
     /**
      * 数据同步
      * @access public
@@ -664,22 +554,12 @@ class BelongsToMany extends Relation
      * @param  bool  $detaching
      * @return array
      */
-    public function sync(array $ids, bool $detaching = true): array
+    public function sync(array $ids, $detaching = true)
     {
-        $changes = [
-            'attached' => [],
-            'detached' => [],
-            'updated'  => [],
-        ];
-
+        $changes = ['attached' => [], 'detached' => [], 'updated' => []];
         $pk = $this->parent->getPk();
-
-        $current = $this->pivot
-            ->where($this->localKey, $this->parent->$pk)
-            ->column($this->foreignKey);
-
+        $current = $this->pivot->where($this->localKey, $this->parent->{$pk})->column($this->foreignKey);
         $records = [];
-
         foreach ($ids as $key => $value) {
             if (!is_array($value)) {
                 $records[$value] = [];
@@ -687,14 +567,11 @@ class BelongsToMany extends Relation
                 $records[$key] = $value;
             }
         }
-
         $detach = array_diff($current, array_keys($records));
-
         if ($detaching && count($detach) > 0) {
             $this->detach($detach);
             $changes['detached'] = $detach;
         }
-
         foreach ($records as $id => $attributes) {
             if (!in_array($id, $current)) {
                 $this->attach($id, $attributes);
@@ -703,8 +580,6 @@ class BelongsToMany extends Relation
                 $changes['updated'][] = $id;
             }
         }
-
         return $changes;
     }
-
 }

@@ -1,14 +1,4 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2019 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
-// +----------------------------------------------------------------------
-declare (strict_types = 1);
 
 namespace think\db\concern;
 
@@ -19,12 +9,11 @@ use think\db\BaseQuery;
  */
 trait Transaction
 {
-
     /**
      * 执行数据库Xa事务
      * @access public
-     * @param  callable $callback 数据操作方法回调
-     * @param  array    $dbs      多个查询对象或者连接对象
+     * @param callable $callback 数据操作方法回调
+     * @param array $dbs 多个查询对象或者连接对象
      * @return mixed
      * @throws PDOException
      * @throws \Exception
@@ -33,37 +22,34 @@ trait Transaction
     public function transactionXa($callback, array $dbs = [])
     {
         $xid = uniqid('xa');
-
         if (empty($dbs)) {
             $dbs[] = $this->getConnection();
         }
-
         foreach ($dbs as $key => $db) {
             if ($db instanceof BaseQuery) {
                 $db = $db->getConnection();
-
                 $dbs[$key] = $db;
             }
-
             $db->startTransXa($xid);
         }
-
         try {
             $result = null;
             if (is_callable($callback)) {
                 $result = call_user_func_array($callback, [$this]);
             }
-
             foreach ($dbs as $db) {
                 $db->prepareXa($xid);
             }
-
             foreach ($dbs as $db) {
                 $db->commitXa($xid);
             }
-
             return $result;
-        } catch (\Exception | \Throwable $e) {
+        } catch (\Exception $e) {
+            foreach ($dbs as $db) {
+                $db->rollbackXa($xid);
+            }
+            throw $e;
+        } catch (\Throwable $e) {
             foreach ($dbs as $db) {
                 $db->rollbackXa($xid);
             }
@@ -87,7 +73,7 @@ trait Transaction
      * @access public
      * @return void
      */
-    public function startTrans(): void
+    public function startTrans()
     {
         $this->connection->startTrans();
     }
@@ -98,7 +84,7 @@ trait Transaction
      * @return void
      * @throws PDOException
      */
-    public function commit(): void
+    public function commit()
     {
         $this->connection->commit();
     }
@@ -109,9 +95,8 @@ trait Transaction
      * @return void
      * @throws PDOException
      */
-    public function rollback(): void
+    public function rollback()
     {
         $this->connection->rollback();
     }
-
 }

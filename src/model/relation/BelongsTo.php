@@ -1,14 +1,4 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2019 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
-// +----------------------------------------------------------------------
-declare (strict_types = 1);
 
 namespace think\model\relation;
 
@@ -16,7 +6,6 @@ use Closure;
 use think\db\BaseQuery as Query;
 use think\helper\Str;
 use think\Model;
-
 /**
  * BelongsTo关联类
  */
@@ -31,20 +20,18 @@ class BelongsTo extends OneToOne
      * @param  string $localKey 关联主键
      * @param  string $relation  关联名
      */
-    public function __construct(Model $parent, string $model, string $foreignKey, string $localKey, string $relation = null)
+    public function __construct(Model $parent, $model, $foreignKey, $localKey, $relation = null)
     {
-        $this->parent     = $parent;
-        $this->model      = $model;
+        $this->parent = $parent;
+        $this->model = $model;
         $this->foreignKey = $foreignKey;
-        $this->localKey   = $localKey;
-        $this->query      = (new $model)->db();
-        $this->relation   = $relation;
-
+        $this->localKey = $localKey;
+        $this->query = (new $model())->db();
+        $this->relation = $relation;
         if (get_class($parent) == $model) {
             $this->selfRelation = true;
         }
     }
-
     /**
      * 延迟获取关联数据
      * @access public
@@ -57,22 +44,13 @@ class BelongsTo extends OneToOne
         if ($closure) {
             $closure($this);
         }
-
         $foreignKey = $this->foreignKey;
-
-        $relationModel = $this->query
-            ->removeWhereField($this->localKey)
-            ->where($this->localKey, $this->parent->$foreignKey)
-            ->relation($subRelation)
-            ->find();
-
+        $relationModel = $this->query->removeWhereField($this->localKey)->where($this->localKey, $this->parent->{$foreignKey})->relation($subRelation)->find();
         if ($relationModel) {
             $relationModel->setParent(clone $this->parent);
         }
-
         return $relationModel;
     }
-
     /**
      * 创建关联统计子查询
      * @access public
@@ -82,18 +60,13 @@ class BelongsTo extends OneToOne
      * @param  string  $name 聚合字段别名
      * @return string
      */
-    public function getRelationCountQuery(Closure $closure = null, string $aggregate = 'count', string $field = '*', &$name = ''): string
+    public function getRelationCountQuery(Closure $closure = null, $aggregate = 'count', $field = '*', &$name = '')
     {
         if ($closure) {
             $closure($this, $name);
         }
-
-        return $this->query
-            ->whereExp($this->localKey, '=' . $this->parent->getTable() . '.' . $this->foreignKey)
-            ->fetchSql()
-            ->$aggregate($field);
+        return $this->query->whereExp($this->localKey, '=' . $this->parent->getTable() . '.' . $this->foreignKey)->fetchSql()->{$aggregate}($field);
     }
-
     /**
      * 关联统计
      * @access public
@@ -104,23 +77,17 @@ class BelongsTo extends OneToOne
      * @param  string  $name 统计字段别名
      * @return integer
      */
-    public function relationCount(Model $result, Closure $closure = null, string $aggregate = 'count', string $field = '*', string &$name = null)
+    public function relationCount(Model $result, Closure $closure = null, $aggregate = 'count', $field = '*', &$name = null)
     {
         $foreignKey = $this->foreignKey;
-
-        if (!isset($result->$foreignKey)) {
+        if (!isset($result->{$foreignKey})) {
             return 0;
         }
-
         if ($closure) {
             $closure($this, $name);
         }
-
-        return $this->query
-            ->where($this->localKey, '=', $result->$foreignKey)
-            ->$aggregate($field);
+        return $this->query->where($this->localKey, '=', $result->{$foreignKey})->{$aggregate}($field);
     }
-
     /**
      * 根据关联条件查询当前模型
      * @access public
@@ -130,27 +97,17 @@ class BelongsTo extends OneToOne
      * @param  string  $joinType JOIN类型
      * @return Query
      */
-    public function has(string $operator = '>=', int $count = 1, string $id = '*', string $joinType = ''): Query
+    public function has($operator = '>=', $count = 1, $id = '*', $joinType = '')
     {
-        $table      = $this->query->getTable();
-        $model      = class_basename($this->parent);
-        $relation   = class_basename($this->model);
-        $localKey   = $this->localKey;
+        $table = $this->query->getTable();
+        $model = class_basename($this->parent);
+        $relation = class_basename($this->model);
+        $localKey = $this->localKey;
         $foreignKey = $this->foreignKey;
-        $softDelete = $this->query->getOptions('soft_delete');
-
-        return $this->parent->db()
-            ->alias($model)
-            ->whereExists(function ($query) use ($table, $model, $relation, $localKey, $foreignKey, $softDelete) {
-                $query->table([$table => $relation])
-                    ->field($relation . '.' . $localKey)
-                    ->whereExp($model . '.' . $foreignKey, '=' . $relation . '.' . $localKey)
-                    ->when($softDelete, function ($query) use ($softDelete, $relation) {
-                        $query->where($relation . strstr($softDelete[0], '.'), '=' == $softDelete[1][0] ? $softDelete[1][1] : null);
-                    });
-            });
+        return $this->parent->db()->alias($model)->whereExists(function ($query) use($table, $model, $relation, $localKey, $foreignKey) {
+            $query->table([$table => $relation])->field($relation . '.' . $localKey)->whereExp($model . '.' . $foreignKey, '=' . $relation . '.' . $localKey);
+        });
     }
-
     /**
      * 根据关联条件查询当前模型
      * @access public
@@ -159,12 +116,11 @@ class BelongsTo extends OneToOne
      * @param  string $joinType JOIN类型
      * @return Query
      */
-    public function hasWhere($where = [], $fields = null, string $joinType = ''): Query
+    public function hasWhere($where = [], $fields = null, $joinType = '')
     {
-        $table    = $this->query->getTable();
-        $model    = class_basename($this->parent);
+        $table = $this->query->getTable();
+        $model = class_basename($this->parent);
         $relation = class_basename($this->model);
-
         if (is_array($where)) {
             $this->getQueryWhere($where, $relation);
         } elseif ($where instanceof Query) {
@@ -173,20 +129,9 @@ class BelongsTo extends OneToOne
             $where($this->query->via($relation));
             $where = $this->query;
         }
-
-        $fields     = $this->getRelationQueryFields($fields, $model);
-        $softDelete = $this->query->getOptions('soft_delete');
-
-        return $this->parent->db()
-            ->alias($model)
-            ->field($fields)
-            ->join([$table => $relation], $model . '.' . $this->foreignKey . '=' . $relation . '.' . $this->localKey, $joinType ?: $this->joinType)
-            ->when($softDelete, function ($query) use ($softDelete, $relation) {
-                $query->where($relation . strstr($softDelete[0], '.'), '=' == $softDelete[1][0] ? $softDelete[1][1] : null);
-            })
-            ->where($where);
+        $fields = $this->getRelationQueryFields($fields, $model);
+        return $this->parent->db()->alias($model)->field($fields)->join([$table => $relation], $model . '.' . $this->foreignKey . '=' . $relation . '.' . $this->localKey, $joinType ?: $this->joinType)->where($where);
     }
-
     /**
      * 预载入关联查询（数据集）
      * @access protected
@@ -197,40 +142,32 @@ class BelongsTo extends OneToOne
      * @param  array   $cache       关联缓存
      * @return void
      */
-    protected function eagerlySet(array &$resultSet, string $relation, array $subRelation = [], Closure $closure = null, array $cache = []): void
+    protected function eagerlySet(array &$resultSet, $relation, array $subRelation = [], Closure $closure = null, array $cache = [])
     {
-        $localKey   = $this->localKey;
+        $localKey = $this->localKey;
         $foreignKey = $this->foreignKey;
-
         $range = [];
         foreach ($resultSet as $result) {
             // 获取关联外键列表
-            if (isset($result->$foreignKey)) {
-                $range[] = $result->$foreignKey;
+            if (isset($result->{$foreignKey})) {
+                $range[] = $result->{$foreignKey};
             }
         }
-
         if (!empty($range)) {
             $this->query->removeWhereField($localKey);
-
-            $data = $this->eagerlyWhere([
-                [$localKey, 'in', $range],
-            ], $localKey, $relation, $subRelation, $closure, $cache);
-
+            $data = $this->eagerlyWhere([[$localKey, 'in', $range]], $localKey, $relation, $subRelation, $closure, $cache);
             // 关联属性名
             $attr = Str::snake($relation);
-
             // 关联数据封装
             foreach ($resultSet as $result) {
                 // 关联模型
-                if (!isset($data[$result->$foreignKey])) {
+                if (!isset($data[$result->{$foreignKey}])) {
                     $relationModel = null;
                 } else {
-                    $relationModel = $data[$result->$foreignKey];
+                    $relationModel = $data[$result->{$foreignKey}];
                     $relationModel->setParent(clone $result);
                     $relationModel->exists(true);
                 }
-
                 if ($relationModel && !empty($this->bindAttr)) {
                     // 绑定关联属性
                     $this->bindAttr($relationModel, $result);
@@ -241,7 +178,6 @@ class BelongsTo extends OneToOne
             }
         }
     }
-
     /**
      * 预载入关联查询（数据）
      * @access protected
@@ -252,26 +188,20 @@ class BelongsTo extends OneToOne
      * @param  array   $cache       关联缓存
      * @return void
      */
-    protected function eagerlyOne(Model $result, string $relation, array $subRelation = [], Closure $closure = null, array $cache = []): void
+    protected function eagerlyOne(Model $result, $relation, array $subRelation = [], Closure $closure = null, array $cache = [])
     {
-        $localKey   = $this->localKey;
+        $localKey = $this->localKey;
         $foreignKey = $this->foreignKey;
-
         $this->query->removeWhereField($localKey);
-
-        $data = $this->eagerlyWhere([
-            [$localKey, '=', $result->$foreignKey],
-        ], $localKey, $relation, $subRelation, $closure, $cache);
-
+        $data = $this->eagerlyWhere([[$localKey, '=', $result->{$foreignKey}]], $localKey, $relation, $subRelation, $closure, $cache);
         // 关联模型
-        if (!isset($data[$result->$foreignKey])) {
+        if (!isset($data[$result->{$foreignKey}])) {
             $relationModel = null;
         } else {
-            $relationModel = $data[$result->$foreignKey];
+            $relationModel = $data[$result->{$foreignKey}];
             $relationModel->setParent(clone $result);
             $relationModel->exists(true);
         }
-
         if ($relationModel && !empty($this->bindAttr)) {
             // 绑定关联属性
             $this->bindAttr($relationModel, $result);
@@ -280,49 +210,42 @@ class BelongsTo extends OneToOne
             $result->setRelation(Str::snake($relation), $relationModel);
         }
     }
-
     /**
      * 添加关联数据
      * @access public
      * @param  Model $model关联模型对象
      * @return Model
      */
-    public function associate(Model $model): Model
+    public function associate(Model $model)
     {
         $this->parent->setAttr($this->foreignKey, $model->getKey());
         $this->parent->save();
-
         return $this->parent->setRelation($this->relation, $model);
     }
-
     /**
      * 注销关联数据
      * @access public
      * @return Model
      */
-    public function dissociate(): Model
+    public function dissociate()
     {
         $foreignKey = $this->foreignKey;
-
         $this->parent->setAttr($foreignKey, null);
         $this->parent->save();
-
         return $this->parent->setRelation($this->relation, null);
     }
-
     /**
      * 执行基础查询（仅执行一次）
      * @access protected
      * @return void
      */
-    protected function baseQuery(): void
+    protected function baseQuery()
     {
         if (empty($this->baseQuery)) {
             if (isset($this->parent->{$this->foreignKey})) {
                 // 关联查询带入关联条件
                 $this->query->where($this->localKey, '=', $this->parent->{$this->foreignKey});
             }
-
             $this->baseQuery = true;
         }
     }

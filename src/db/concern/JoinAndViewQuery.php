@@ -1,14 +1,4 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2019 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
-// +----------------------------------------------------------------------
-declare (strict_types = 1);
 
 namespace think\db\concern;
 
@@ -16,13 +6,11 @@ use Closure;
 use think\db\Raw;
 use think\helper\Str;
 use think\model\relation\OneToOne;
-
 /**
  * JOIN和VIEW查询
  */
 trait JoinAndViewQuery
 {
-
     /**
      * 查询SQL组装 join
      * @access public
@@ -32,19 +20,15 @@ trait JoinAndViewQuery
      * @param array  $bind      参数绑定
      * @return $this
      */
-    public function join($join, string $condition = null, string $type = 'INNER', array $bind = [])
+    public function join($join, $condition = null, $type = 'INNER', array $bind = [])
     {
         $table = $this->getJoinTable($join);
-
         if (!empty($bind) && $condition) {
             $this->bindParams($condition, $bind);
         }
-
         $this->options['join'][] = [$table, strtoupper($type), $condition];
-
         return $this;
     }
-
     /**
      * LEFT JOIN
      * @access public
@@ -53,11 +37,10 @@ trait JoinAndViewQuery
      * @param array $bind      参数绑定
      * @return $this
      */
-    public function leftJoin($join, string $condition = null, array $bind = [])
+    public function leftJoin($join, $condition = null, array $bind = [])
     {
         return $this->join($join, $condition, 'LEFT', $bind);
     }
-
     /**
      * RIGHT JOIN
      * @access public
@@ -66,11 +49,10 @@ trait JoinAndViewQuery
      * @param array $bind      参数绑定
      * @return $this
      */
-    public function rightJoin($join, string $condition = null, array $bind = [])
+    public function rightJoin($join, $condition = null, array $bind = [])
     {
         return $this->join($join, $condition, 'RIGHT', $bind);
     }
-
     /**
      * FULL JOIN
      * @access public
@@ -79,11 +61,10 @@ trait JoinAndViewQuery
      * @param array $bind      参数绑定
      * @return $this
      */
-    public function fullJoin($join, string $condition = null, array $bind = [])
+    public function fullJoin($join, $condition = null, array $bind = [])
     {
         return $this->join($join, $condition, 'FULL');
     }
-
     /**
      * 获取Join表名及别名 支持
      * ['prefix_table或者子查询'=>'alias'] 'table alias'
@@ -101,9 +82,7 @@ trait JoinAndViewQuery
         } elseif ($join instanceof Raw) {
             return $join;
         }
-
         $join = trim($join);
-
         if (false !== strpos($join, '(')) {
             // 使用子查询
             $table = $join;
@@ -118,19 +97,15 @@ trait JoinAndViewQuery
                     $alias = $join;
                 }
             }
-
             if ($this->prefix && false === strpos($table, '.') && 0 !== strpos($table, $this->prefix)) {
                 $table = $this->getTable($table);
             }
         }
-
         if (!empty($alias) && $table != $alias) {
             $table = [$table => $alias];
         }
-
         return $table;
     }
-
     /**
      * 关联预载入 JOIN方式
      * @access protected
@@ -138,35 +113,30 @@ trait JoinAndViewQuery
      * @param string       $joinType JOIN方式
      * @return $this
      */
-    public function withJoin($with, string $joinType = '')
+    public function withJoin($with, $joinType = '')
     {
         if (empty($with)) {
             return $this;
         }
-
         $first = true;
-
         /** @var Model $class */
         $class = $this->model;
         foreach ((array) $with as $key => $relation) {
             $closure = null;
-            $field   = true;
-
+            $field = true;
             if ($relation instanceof Closure) {
                 // 支持闭包查询过滤关联条件
-                $closure  = $relation;
+                $closure = $relation;
                 $relation = $key;
             } elseif (is_array($relation)) {
-                $field    = $relation;
+                $field = $relation;
                 $relation = $key;
             } elseif (is_string($relation) && strpos($relation, '.')) {
                 $relation = strstr($relation, '.', true);
             }
-
             /** @var Relation $model */
             $relation = Str::camel($relation);
-            $model    = $class->$relation();
-
+            $model = $class->{$relation}();
             if ($model instanceof OneToOne) {
                 $model->eagerly($this, $relation, $field, $joinType, $closure, $first);
                 $first = false;
@@ -175,14 +145,10 @@ trait JoinAndViewQuery
                 unset($with[$key]);
             }
         }
-
         $this->via();
-
         $this->options['with_join'] = $with;
-
         return $this;
     }
-
     /**
      * 指定JOIN查询字段
      * @access public
@@ -193,57 +159,47 @@ trait JoinAndViewQuery
      * @param array        $bind  参数绑定
      * @return $this
      */
-    public function view($join, $field = true, $on = null, string $type = 'INNER', array $bind = [])
+    public function view($join, $field = true, $on = null, $type = 'INNER', array $bind = [])
     {
         $this->options['view'] = true;
-
         $fields = [];
-        $table  = $this->getJoinTable($join, $alias);
-
+        $table = $this->getJoinTable($join, $alias);
         if (true === $field) {
             $fields = $alias . '.*';
         } else {
             if (is_string($field)) {
                 $field = explode(',', $field);
             }
-
             foreach ($field as $key => $val) {
                 if (is_numeric($key)) {
                     $fields[] = $alias . '.' . $val;
-
                     $this->options['map'][$val] = $alias . '.' . $val;
                 } else {
-                    if (preg_match('/[,=\.\'\"\(\s]/', $key)) {
+                    if (preg_match('/[,=\\.\'\\"\\(\\s]/', $key)) {
                         $name = $key;
                     } else {
                         $name = $alias . '.' . $key;
                     }
-
                     $fields[] = $name . ' AS ' . $val;
-
                     $this->options['map'][$val] = $name;
                 }
             }
         }
-
         $this->field($fields);
-
         if ($on) {
             $this->join($table, $on, $type, $bind);
         } else {
             $this->table($table);
         }
-
         return $this;
     }
-
     /**
      * 视图查询处理
      * @access protected
      * @param array $options 查询参数
      * @return void
      */
-    protected function parseView(array &$options): void
+    protected function parseView(array &$options)
     {
         foreach (['AND', 'OR'] as $logic) {
             if (isset($options['where'][$logic])) {
@@ -257,7 +213,6 @@ trait JoinAndViewQuery
                 }
             }
         }
-
         if (isset($options['order'])) {
             // 视图查询排序处理
             foreach ($options['order'] as $key => $val) {
@@ -279,5 +234,4 @@ trait JoinAndViewQuery
             }
         }
     }
-
 }

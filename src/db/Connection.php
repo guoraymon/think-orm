@@ -1,14 +1,4 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2019 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: liu21st <liu21st@gmail.com>
-// +----------------------------------------------------------------------
-declare (strict_types = 1);
 
 namespace think\db;
 
@@ -19,103 +9,86 @@ use think\db\exception\DataNotFoundException;
 use think\db\exception\DbException as Exception;
 use think\db\exception\ModelNotFoundException;
 use think\db\exception\PDOException;
-
 /**
  * 数据库连接基础类
  */
 abstract class Connection
 {
-
     /**
      * 当前SQL指令
      * @var string
      */
     protected $queryStr = '';
-
     /**
      * 返回或者影响记录数
      * @var int
      */
     protected $numRows = 0;
-
     /**
      * 事务指令数
      * @var int
      */
     protected $transTimes = 0;
-
     /**
      * 错误信息
      * @var string
      */
     protected $error = '';
-
     /**
      * 数据库连接ID 支持多个连接
      * @var array
      */
     protected $links = [];
-
     /**
      * 当前连接ID
      * @var object
      */
     protected $linkID;
-
     /**
      * 当前读连接ID
      * @var object
      */
     protected $linkRead;
-
     /**
      * 当前写连接ID
      * @var object
      */
     protected $linkWrite;
-
     /**
      * 数据表信息
      * @var array
      */
     protected $info = [];
-
     /**
      * 查询开始时间
      * @var float
      */
     protected $queryStartTime;
-
     /**
      * Builder对象
      * @var Builder
      */
     protected $builder;
-
     /**
      * Db对象
      * @var Db
      */
     protected $db;
-
     /**
      * 是否读取主库
      * @var bool
      */
     protected $readMaster = false;
-
     /**
      * 数据库连接参数配置
      * @var array
      */
     protected $config = [];
-
     /**
      * 缓存对象
      * @var Cache
      */
     protected $cache;
-
     /**
      * 架构函数 读取数据库配置信息
      * @access public
@@ -126,16 +99,12 @@ abstract class Connection
         if (!empty($config)) {
             $this->config = array_merge($this->config, $config);
         }
-
         // 创建Builder对象
         $class = $this->getBuilderClass();
-
         $this->builder = new $class($this);
-
         // 执行初始化操作
         $this->initialize();
     }
-
     /**
      * 初始化
      * @access protected
@@ -144,21 +113,18 @@ abstract class Connection
     protected function initialize()
     {
     }
-
     /**
      * 获取当前连接器类对应的Query类
      * @access public
      * @return string
      */
-    abstract public function getQueryClass(): string;
-
+    public abstract function getQueryClass();
     /**
      * 获取当前连接器类对应的Builder类
      * @access public
      * @return string
      */
-    abstract public function getBuilderClass(): string;
-
+    public abstract function getBuilderClass();
     /**
      * 获取当前的builder实例对象
      * @access public
@@ -168,7 +134,6 @@ abstract class Connection
     {
         return $this->builder;
     }
-
     /**
      * 设置当前的数据库Db对象
      * @access public
@@ -179,7 +144,6 @@ abstract class Connection
     {
         $this->db = $db;
     }
-
     /**
      * 设置当前的缓存对象
      * @access public
@@ -190,7 +154,6 @@ abstract class Connection
     {
         $this->cache = $cache;
     }
-
     /**
      * 获取当前的缓存对象
      * @access public
@@ -200,21 +163,19 @@ abstract class Connection
     {
         return $this->cache;
     }
-
     /**
      * 获取数据库的配置参数
      * @access public
      * @param string $config 配置名称
      * @return mixed
      */
-    public function getConfig(string $config = '')
+    public function getConfig($config = '')
     {
         if ('' === $config) {
             return $this->config;
         }
-        return $this->config[$config] ?? null;
+        return isset($this->config[$config]) ? $this->config[$config] : null;
     }
-
     /**
      * 设置数据库的配置参数
      * @access public
@@ -225,7 +186,6 @@ abstract class Connection
     {
         $this->config = array_merge($this->config, $config);
     }
-
     /**
      * 连接数据库方法
      * @access public
@@ -234,14 +194,12 @@ abstract class Connection
      * @return mixed
      * @throws Exception
      */
-    abstract public function connect(array $config = [], $linkNum = 0);
-
+    public abstract function connect(array $config = [], $linkNum = 0);
     /**
      * 释放查询结果
      * @access public
      */
-    abstract public function free();
-
+    public abstract function free();
     /**
      * 查找单条记录
      * @access public
@@ -251,16 +209,14 @@ abstract class Connection
      * @throws ModelNotFoundException
      * @throws DataNotFoundException
      */
-    abstract public function find(BaseQuery $query): array;
-
+    public abstract function find(BaseQuery $query);
     /**
      * 使用游标查询记录
      * @access public
      * @param BaseQuery $query 查询对象
      * @return \Generator
      */
-    abstract public function cursor(BaseQuery $query);
-
+    public abstract function cursor(BaseQuery $query);
     /**
      * 查找记录
      * @access public
@@ -270,8 +226,7 @@ abstract class Connection
      * @throws ModelNotFoundException
      * @throws DataNotFoundException
      */
-    abstract public function select(BaseQuery $query): array;
-
+    public abstract function select(BaseQuery $query);
     /**
      * 插入记录
      * @access public
@@ -279,8 +234,7 @@ abstract class Connection
      * @param boolean $getLastInsID 返回自增主键
      * @return mixed
      */
-    abstract public function insert(BaseQuery $query, bool $getLastInsID = false);
-
+    public abstract function insert(BaseQuery $query, $getLastInsID = false);
     /**
      * 批量插入记录
      * @access public
@@ -290,8 +244,7 @@ abstract class Connection
      * @throws \Exception
      * @throws \Throwable
      */
-    abstract public function insertAll(BaseQuery $query, array $dataSet = []): int;
-
+    public abstract function insertAll(BaseQuery $query, array $dataSet = []);
     /**
      * 更新记录
      * @access public
@@ -300,8 +253,7 @@ abstract class Connection
      * @throws Exception
      * @throws PDOException
      */
-    abstract public function update(BaseQuery $query): int;
-
+    public abstract function update(BaseQuery $query);
     /**
      * 删除记录
      * @access public
@@ -310,8 +262,7 @@ abstract class Connection
      * @throws Exception
      * @throws PDOException
      */
-    abstract public function delete(BaseQuery $query): int;
-
+    public abstract function delete(BaseQuery $query);
     /**
      * 得到某个字段的值
      * @access public
@@ -321,8 +272,7 @@ abstract class Connection
      * @param bool   $one     返回一个值
      * @return mixed
      */
-    abstract public function value(BaseQuery $query, string $field, $default = null);
-
+    public abstract function value(BaseQuery $query, $field, $default = null);
     /**
      * 得到某个列的数组
      * @access public
@@ -331,8 +281,7 @@ abstract class Connection
      * @param string $key    索引
      * @return array
      */
-    abstract public function column(BaseQuery $query, string $column, string $key = ''): array;
-
+    public abstract function column(BaseQuery $query, $column, $key = '');
     /**
      * 执行数据库事务
      * @access public
@@ -342,8 +291,7 @@ abstract class Connection
      * @throws \Exception
      * @throws \Throwable
      */
-    abstract public function transaction(callable $callback);
-
+    public abstract function transaction(callable $callback);
     /**
      * 启动事务
      * @access public
@@ -351,38 +299,33 @@ abstract class Connection
      * @throws \PDOException
      * @throws \Exception
      */
-    abstract public function startTrans();
-
+    public abstract function startTrans();
     /**
      * 用于非自动提交状态下面的查询提交
      * @access public
      * @return void
      * @throws PDOException
      */
-    abstract public function commit();
-
+    public abstract function commit();
     /**
      * 事务回滚
      * @access public
      * @return void
      * @throws PDOException
      */
-    abstract public function rollback();
-
+    public abstract function rollback();
     /**
      * 关闭数据库（或者重新连接）
      * @access public
      * @return $this
      */
-    abstract public function close();
-
+    public abstract function close();
     /**
      * 获取最近一次查询的sql语句
      * @access public
      * @return string
      */
-    abstract public function getLastSql(): string;
-
+    public abstract function getLastSql();
     /**
      * 获取最近插入的ID
      * @access public
@@ -390,16 +333,14 @@ abstract class Connection
      * @param string $sequence 自增序列名
      * @return mixed
      */
-    abstract public function getLastInsID(BaseQuery $query, string $sequence = null);
-
+    public abstract function getLastInsID(BaseQuery $query, $sequence = null);
     /**
      * 初始化数据库连接
      * @access protected
      * @param boolean $master 是否主服务器
      * @return void
      */
-    abstract protected function initConnect(bool $master = true);
-
+    protected abstract function initConnect($master = true);
     /**
      * 记录SQL日志
      * @access protected
@@ -413,7 +354,6 @@ abstract class Connection
             $this->db->log($log, $type);
         }
     }
-
     /**
      * 缓存数据
      * @access protected
@@ -427,24 +367,21 @@ abstract class Connection
             $this->cache->set($cacheItem->getKey(), $cacheItem->get(), $cacheItem->getExpire());
         }
     }
-
     /**
      * 分析缓存Key
      * @access protected
      * @param BaseQuery $query 查询对象
      * @return string
      */
-    protected function getCacheKey(BaseQuery $query): string
+    protected function getCacheKey(BaseQuery $query)
     {
         if (!empty($query->getOptions('key'))) {
             $key = 'think:' . $this->getConfig('database') . '.' . $query->getTable() . '|' . $query->getOptions('key');
         } else {
             $key = md5($this->getConfig('database') . serialize($query->getOptions()));
         }
-
         return $key;
     }
-
     /**
      * 分析缓存
      * @access protected
@@ -452,25 +389,21 @@ abstract class Connection
      * @param array $cache 缓存信息
      * @return CacheItem
      */
-    protected function parseCache(BaseQuery $query, array $cache): CacheItem
+    protected function parseCache(BaseQuery $query, array $cache)
     {
         list($key, $expire, $tag) = $cache;
-
         if ($key instanceof CacheItem) {
             $cacheItem = $key;
         } else {
             if (true === $key) {
                 $key = $this->getCacheKey($query);
             }
-
             $cacheItem = new CacheItem($key);
             $cacheItem->expire($expire);
             $cacheItem->tag($tag);
         }
-
         return $cacheItem;
     }
-
     /**
      * 延时更新检查 返回false表示需要延时
      * 否则返回实际写入的数值
@@ -481,66 +414,63 @@ abstract class Connection
      * @param integer $lazyTime 延时时间(s)
      * @return false|integer
      */
-    public function lazyWrite(string $type, string $guid, float $step, int $lazyTime)
+    public function lazyWrite($type, $guid, $step, $lazyTime)
     {
         if (!$this->cache || !method_exists($this->cache, $type)) {
             return $step;
         }
-
         if (!$this->cache->has($guid . '_time')) {
             // 计时开始
             $this->cache->set($guid . '_time', time(), 0);
-            $this->cache->$type($guid, $step);
+            $this->cache->{$type}($guid, $step);
         } elseif (time() > $this->cache->get($guid . '_time') + $lazyTime) {
             // 删除缓存
-            $value = $this->cache->$type($guid, $step);
+            $value = $this->cache->{$type}($guid, $step);
             $this->cache->delete($guid);
             $this->cache->delete($guid . '_time');
             return 0 === $value ? false : $value;
         } else {
             // 更新缓存
-            $this->cache->$type($guid, $step);
+            $this->cache->{$type}($guid, $step);
         }
-
         return false;
     }
-
     /**
      * 启动XA事务
      * @access public
      * @param  string $xid XA事务id
      * @return void
      */
-    public function startTransXa(string $xid)
-    {}
-
+    public function startTransXa($xid)
+    {
+    }
     /**
      * 预编译XA事务
      * @access public
      * @param  string $xid XA事务id
      * @return void
      */
-    public function prepareXa(string $xid)
-    {}
-
+    public function prepareXa($xid)
+    {
+    }
     /**
      * 提交XA事务
      * @access public
      * @param  string $xid XA事务id
      * @return void
      */
-    public function commitXa(string $xid)
-    {}
-
+    public function commitXa($xid)
+    {
+    }
     /**
      * 回滚XA事务
      * @access public
      * @param  string $xid XA事务id
      * @return void
      */
-    public function rollbackXa(string $xid)
-    {}
-
+    public function rollbackXa($xid)
+    {
+    }
     /**
      * 析构方法
      * @access public
@@ -549,7 +479,6 @@ abstract class Connection
     {
         // 释放查询
         $this->free();
-
         // 关闭连接
         $this->close();
     }

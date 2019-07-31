@@ -1,4 +1,5 @@
 <?php
+
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK ]
 // +----------------------------------------------------------------------
@@ -8,12 +9,12 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
-
 namespace think\facade;
 
-if (class_exists('think\Facade')) {
+if (class_exists('think\\Facade')) {
     class Facade extends \think\Facade
-    {}
+    {
+    }
 } else {
     class Facade
     {
@@ -22,17 +23,15 @@ if (class_exists('think\Facade')) {
          * @var bool
          */
         protected static $alwaysNewInstance;
-
         protected static $instance;
-
         /**
          * 获取当前Facade对应类名
          * @access protected
          * @return string
          */
         protected static function getFacadeClass()
-        {}
-
+        {
+        }
         /**
          * 创建Facade实例
          * @static
@@ -40,26 +39,20 @@ if (class_exists('think\Facade')) {
          * @param  bool $newInstance 是否每次创建新的实例
          * @return object
          */
-        protected static function createFacade(bool $newInstance = false)
+        protected static function createFacade($newInstance = false)
         {
-            $class = static::getFacadeClass() ?: 'think\DbManager';
-
+            $class = static::getFacadeClass() ?: 'think\\DbManager';
             if (static::$alwaysNewInstance) {
                 $newInstance = true;
             }
-
             if ($newInstance) {
                 return new $class();
             }
-
             if (!self::$instance) {
                 self::$instance = new $class();
             }
-
             return self::$instance;
-
         }
-
         // 调用实际类的方法
         public static function __callStatic($method, $params)
         {
@@ -67,7 +60,6 @@ if (class_exists('think\Facade')) {
         }
     }
 }
-
 /**
  * @see \think\DbManager
  * @mixin \think\DbManager
@@ -81,6 +73,6 @@ class Db extends Facade
      */
     protected static function getFacadeClass()
     {
-        return 'think\DbManager';
+        return 'think\\DbManager';
     }
 }

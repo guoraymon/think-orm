@@ -1,4 +1,5 @@
 <?php
+
 // +----------------------------------------------------------------------
 // | ThinkPHP [ WE CAN DO IT JUST THINK ]
 // +----------------------------------------------------------------------
@@ -8,7 +9,6 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
-
 namespace think\model\relation;
 
 use Closure;
@@ -17,7 +17,6 @@ use think\db\exception\DbException as Exception;
 use think\helper\Str;
 use think\Model;
 use think\model\Relation;
-
 /**
  * 一对一关联基础类
  * @package think\model\relation
@@ -29,31 +28,27 @@ abstract class OneToOne extends Relation
      * @var string
      */
     protected $joinType = 'INNER';
-
     /**
      * 绑定的关联属性
      * @var array
      */
     protected $bindAttr = [];
-
     /**
      * 关联名
      * @var string
      */
     protected $relation;
-
     /**
      * 设置join类型
      * @access public
      * @param  string $type JOIN类型
      * @return $this
      */
-    public function joinType(string $type)
+    public function joinType($type)
     {
         $this->joinType = $type;
         return $this;
     }
-
     /**
      * 预载入关联查询（JOIN方式）
      * @access public
@@ -65,37 +60,30 @@ abstract class OneToOne extends Relation
      * @param  bool    $first
      * @return void
      */
-    public function eagerly(Query $query, string $relation, $field = true, string $joinType = '', Closure $closure = null, bool $first = false): void
+    public function eagerly(Query $query, $relation, $field = true, $joinType = '', Closure $closure = null, $first = false)
     {
         $name = Str::snake(class_basename($this->parent));
-
         if ($first) {
             $table = $query->getTable();
             $query->table([$table => $name]);
-
             if ($query->getOptions('field')) {
                 $masterField = $query->getOptions('field');
                 $query->removeOption('field');
             } else {
                 $masterField = true;
             }
-
             $query->tableField($masterField, $table, $name);
         }
-
         // 预载入封装
         $joinTable = $this->query->getTable();
         $joinAlias = $relation;
-        $joinType  = $joinType ?: $this->joinType;
-
+        $joinType = $joinType ?: $this->joinType;
         $query->via($joinAlias);
-
         if ($this instanceof BelongsTo) {
             $joinOn = $name . '.' . $this->foreignKey . '=' . $joinAlias . '.' . $this->localKey;
         } else {
             $joinOn = $name . '.' . $this->localKey . '=' . $joinAlias . '.' . $this->foreignKey;
         }
-
         if ($closure) {
             // 执行闭包查询
             $closure($query);
@@ -104,11 +92,8 @@ abstract class OneToOne extends Relation
                 $field = $this->withField;
             }
         }
-
-        $query->join([$joinTable => $joinAlias], $joinOn, $joinType)
-            ->tableField($field, $joinTable, $joinAlias, $relation . '__');
+        $query->join([$joinTable => $joinAlias], $joinOn, $joinType)->tableField($field, $joinTable, $joinAlias, $relation . '__');
     }
-
     /**
      *  预载入关联查询（数据集）
      * @access protected
@@ -118,8 +103,7 @@ abstract class OneToOne extends Relation
      * @param  Closure $closure
      * @return mixed
      */
-    abstract protected function eagerlySet(array &$resultSet, string $relation, array $subRelation = [], Closure $closure = null);
-
+    protected abstract function eagerlySet(array &$resultSet, $relation, array $subRelation = [], Closure $closure = null);
     /**
      * 预载入关联查询（数据）
      * @access protected
@@ -129,8 +113,7 @@ abstract class OneToOne extends Relation
      * @param  Closure $closure
      * @return mixed
      */
-    abstract protected function eagerlyOne(Model $result, string $relation, array $subRelation = [], Closure $closure = null);
-
+    protected abstract function eagerlyOne(Model $result, $relation, array $subRelation = [], Closure $closure = null);
     /**
      * 预载入关联查询（数据集）
      * @access public
@@ -142,7 +125,7 @@ abstract class OneToOne extends Relation
      * @param  bool    $join        是否为JOIN方式
      * @return void
      */
-    public function eagerlyResultSet(array &$resultSet, string $relation, array $subRelation = [], Closure $closure = null, array $cache = [], bool $join = false): void
+    public function eagerlyResultSet(array &$resultSet, $relation, array $subRelation = [], Closure $closure = null, array $cache = [], $join = false)
     {
         if ($join) {
             // 模型JOIN关联组装
@@ -154,7 +137,6 @@ abstract class OneToOne extends Relation
             $this->eagerlySet($resultSet, $relation, $subRelation, $closure, $cache);
         }
     }
-
     /**
      * 预载入关联查询（数据）
      * @access public
@@ -166,7 +148,7 @@ abstract class OneToOne extends Relation
      * @param  bool    $join        是否为JOIN方式
      * @return void
      */
-    public function eagerlyResult(Model $result, string $relation, array $subRelation = [], Closure $closure = null, array $cache = [], bool $join = false): void
+    public function eagerlyResult(Model $result, $relation, array $subRelation = [], Closure $closure = null, array $cache = [], $join = false)
     {
         if ($join) {
             // 模型JOIN关联组装
@@ -176,7 +158,6 @@ abstract class OneToOne extends Relation
             $this->eagerlyOne($result, $relation, $subRelation, $closure, $cache);
         }
     }
-
     /**
      * 保存（新增）当前关联数据对象
      * @access public
@@ -184,19 +165,16 @@ abstract class OneToOne extends Relation
      * @param  boolean $replace 是否自动识别更新和写入
      * @return Model|false
      */
-    public function save($data, bool $replace = true)
+    public function save($data, $replace = true)
     {
         if ($data instanceof Model) {
             $data = $data->getData();
         }
-
-        $model = new $this->model;
+        $model = new $this->model();
         // 保存关联表数据
         $data[$this->foreignKey] = $this->parent->{$this->localKey};
-
         return $model->replace($replace)->save($data) ? $model : false;
     }
-
     /**
      * 绑定关联表的属性到父模型属性
      * @access public
@@ -206,20 +184,17 @@ abstract class OneToOne extends Relation
     public function bind(array $attr)
     {
         $this->bindAttr = $attr;
-
         return $this;
     }
-
     /**
      * 获取绑定属性
      * @access public
      * @return array
      */
-    public function getBindAttr(): array
+    public function getBindAttr()
     {
         return $this->bindAttr;
     }
-
     /**
      * 一对一 关联模型预查询拼装
      * @access public
@@ -228,7 +203,7 @@ abstract class OneToOne extends Relation
      * @param  Model  $result   模型对象实例
      * @return void
      */
-    protected function match(string $model, string $relation, Model $result): void
+    protected function match($model, $relation, Model $result)
     {
         // 重新组装模型数据
         foreach ($result->getData() as $key => $val) {
@@ -236,14 +211,12 @@ abstract class OneToOne extends Relation
                 list($name, $attr) = explode('__', $key, 2);
                 if ($name == $relation) {
                     $list[$name][$attr] = $val;
-                    unset($result->$key);
+                    unset($result->{$key});
                 }
             }
         }
-
         if (isset($list[$relation])) {
             $array = array_unique($list[$relation]);
-
             if (count($array) == 1 && null === current($array)) {
                 $relationModel = null;
             } else {
@@ -251,17 +224,14 @@ abstract class OneToOne extends Relation
                 $relationModel->setParent(clone $result);
                 $relationModel->exists(true);
             }
-
             if ($relationModel && !empty($this->bindAttr)) {
                 $this->bindAttr($relationModel, $result);
             }
         } else {
             $relationModel = null;
         }
-
         $result->setRelation(Str::snake($relation), $relationModel);
     }
-
     /**
      * 绑定关联属性到父模型
      * @access protected
@@ -270,20 +240,17 @@ abstract class OneToOne extends Relation
      * @return void
      * @throws Exception
      */
-    protected function bindAttr(Model $model, Model $result): void
+    protected function bindAttr(Model $model, Model $result)
     {
         foreach ($this->bindAttr as $key => $attr) {
-            $key   = is_numeric($key) ? $attr : $key;
+            $key = is_numeric($key) ? $attr : $key;
             $value = $result->getOrigin($key);
-
             if (!is_null($value)) {
                 throw new Exception('bind attr has exists:' . $key);
             }
-
-            $result->setAttr($key, $model ? $model->$attr : null);
+            $result->setAttr($key, $model ? $model->{$attr} : null);
         }
     }
-
     /**
      * 一对一 关联模型预查询（IN方式）
      * @access public
@@ -295,38 +262,27 @@ abstract class OneToOne extends Relation
      * @param  array   $cache       关联缓存
      * @return array
      */
-    protected function eagerlyWhere(array $where, string $key, string $relation, array $subRelation = [], Closure $closure = null, array $cache = [])
+    protected function eagerlyWhere(array $where, $key, $relation, array $subRelation = [], Closure $closure = null, array $cache = [])
     {
         // 预载入关联查询 支持嵌套预载入
         if ($closure) {
             $this->baseQuery = true;
             $closure($this);
         }
-
         if ($this->withField) {
             $this->query->field($this->withField);
         }
-
         if ($this->query->getOptions('order')) {
             $this->query->group($key);
         }
-
-        $list = $this->query
-            ->where($where)
-            ->with($subRelation)
-            ->cache($cache[0] ?? false, $cache[1] ?? null, $cache[2] ?? null)
-            ->select();
-
+        $list = $this->query->where($where)->with($subRelation)->cache(isset($cache[0]) ? $cache[0] : false, isset($cache[1]) ? $cache[1] : null, isset($cache[2]) ? $cache[2] : null)->select();
         // 组装模型数据
         $data = [];
-
         foreach ($list as $set) {
-            if (!isset($data[$set->$key])) {
-                $data[$set->$key] = $set;
+            if (!isset($data[$set->{$key}])) {
+                $data[$set->{$key}] = $set;
             }
         }
-
         return $data;
     }
-
 }

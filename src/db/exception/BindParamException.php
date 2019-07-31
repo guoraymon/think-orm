@@ -1,14 +1,4 @@
 <?php
-// +----------------------------------------------------------------------
-// | ThinkPHP [ WE CAN DO IT JUST THINK ]
-// +----------------------------------------------------------------------
-// | Copyright (c) 2006~2019 http://thinkphp.cn All rights reserved.
-// +----------------------------------------------------------------------
-// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
-// +----------------------------------------------------------------------
-// | Author: 麦当苗儿 <zuojiazi@vip.qq.com> <http://zjzit.cn>
-// +----------------------------------------------------------------------
-declare (strict_types = 1);
 
 namespace think\db\exception;
 
@@ -17,7 +7,6 @@ namespace think\db\exception;
  */
 class BindParamException extends DbException
 {
-
     /**
      * BindParamException constructor.
      * @access public
@@ -27,7 +16,7 @@ class BindParamException extends DbException
      * @param  array    $bind
      * @param  int    $code
      */
-    public function __construct(string $message, array $config, string $sql, array $bind, int $code = 10502)
+    public function __construct($message, array $config, $sql, array $bind, $code = 10502)
     {
         $this->setData('Bind Param', $bind);
         parent::__construct($message, $config, $sql, $code);
